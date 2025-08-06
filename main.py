@@ -7,6 +7,12 @@ from dotenv import load_dotenv
 from keep_alive import keep_alive
 
 load_dotenv()
+
+print("TOKEN:", os.getenv("TOKEN"))
+print("OWNER_ID:", os.getenv("OWNER_ID"))
+print("GUILD_ID:", os.getenv("GUILD_ID"))
+
+
 TOKEN = os.getenv("TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID"))
 GUILD_ID = int(os.getenv("GUILD_ID"))
