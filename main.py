@@ -9,7 +9,7 @@ from keep_alive import keep_alive
 load_dotenv()
 
 
-print("TOKEN:", os.environ.get('YOUR_VARIABLE_NAME'))
+print("TOKEN:", os.environ.get('TOKEN'))
 print("OWNER_ID:", os.getenv("OWNER_ID"))
 print("GUILD_ID:", os.getenv("GUILD_ID"))
 
