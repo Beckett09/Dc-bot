@@ -4,19 +4,14 @@ from discord.ext import commands
 from discord import app_commands
 from keep_alive import keep_alive
 
-
-print("🔍 All environment variables:")
-for k, v in os.environ.items():
-    print(f"{k}: {v}")
-    
-print("TOKEN:", os.environ.get('TOKEN'))
-print("OWNER_ID:", os.getenv("OWNER_ID"))
-print("GUILD_ID:", os.getenv("GUILD_ID"))
+print("TOKEN:", ${{shared.TOKEN}})
+print("OWNER_ID:", ${{shared.OWNER_ID}})
+print("GUILD_ID:", ${{shared.GUILD_ID}})
 
 
-TOKEN = os.getenv("TOKEN")
-OWNER_ID = int(os.getenv("OWNER_ID"))
-GUILD_ID = int(os.getenv("GUILD_ID"))
+TOKEN = int(${{shared.TOKEN}}))
+OWNER_ID = int(${{shared.OWNER_ID}})
+GUILD_ID = int(${{shared.GUILD_ID}})
 
 intents = discord.Intents.default()
 intents.message_content = True
