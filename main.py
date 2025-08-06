@@ -2,11 +2,8 @@ import os
 import discord
 from discord.ext import commands
 from discord import app_commands
-from dotenv import load_dotenv
-
 from keep_alive import keep_alive
 
-load_dotenv()
 
 print("🔍 All environment variables:")
 for k, v in os.environ.items():
