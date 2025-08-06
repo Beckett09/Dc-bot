@@ -9,7 +9,7 @@ print("OWNER_ID:", ${{shared.OWNER_ID}})
 print("GUILD_ID:", ${{shared.GUILD_ID}})
 
 
-TOKEN = int(${{shared.TOKEN}}))
+TOKEN = int(${{shared.TOKEN}})
 OWNER_ID = int(${{shared.OWNER_ID}})
 GUILD_ID = int(${{shared.GUILD_ID}})
 
