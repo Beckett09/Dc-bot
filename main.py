@@ -87,6 +87,11 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+
+    print("Commands registered before sync:")
+    for cmd in bot.tree.walk_commands():
+        print(f"- {cmd.name}")
+
     try:
         guild = discord.Object(id=GUILD_ID)
         synced = await bot.tree.sync(guild=guild)
