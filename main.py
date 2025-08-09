@@ -49,8 +49,8 @@ class PublishModal(discord.ui.Modal, title="Submit UGC Item"):
 class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
     roblox_username = discord.ui.TextInput(label="Roblox Username", max_length=100)
     roblox_user_id = discord.ui.TextInput(label="Roblox User ID", max_length=20)
-    ugc_example_link = discord.ui.TextInput(label="UGC Example (render, portfolio link, or past work)", style=discord.TextStyle.paragraph, max_length=500)
-    acknowledgment = discord.ui.TextInput(label="Type 'I agree' to confirm you understand the requirements", max_length=10)
+    ugc_example_link = discord.ui.TextInput(label="UGC Example or Portfolio Link", style=discord.TextStyle.paragraph, max_length=500)
+    acknowledgment = discord.ui.TextInput(label="Type 'I agree' to confirm you understand", max_length=10)
 
     async def on_submit(self, interaction: discord.Interaction):
         if self.acknowledgment.value.strip().lower() != "i agree":
