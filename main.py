@@ -74,21 +74,27 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
 
         # Append to Google Sheet
         try:
-            sheet = gc.open_by_key(SHEET_ID).worksheet(WORKSHEET_NAME)
-            # Find the next available row
-            next_row = len(sheet.get_all_values()) + 1
-            # Prepare data row - update as needed
-            row_data = [
-                str(interaction.user.id),
-                interaction.user.name,
-                self.roblox_username.value.strip(),
-                self.roblox_user_id.value.strip(),
-                self.ugc_example_link.value.strip()
-            ]
-            sheet.insert_row(row_data, next_row)
-        except Exception as e:
-            await interaction.response.send_message(f"❌ Failed to save verification info: {e}", ephemeral=True)
-            return
+    sheet = gc.open_by_key(SHEET_ID).worksheet(WORKSHEET_NAME)
+    # Find the next available row (1-based)
+    next_row = len(sheet.get_all_values()) + 1
+
+    # Prepare the row data:
+    # Column 1: Roblox Username (string)
+    # Column 2: Roblox User ID (string)
+    # Column 3: formula for COUNTIF(...) referencing current row
+    # Column 4: formula referencing column 3 of current row and range C4:C20
+
+    col1 = self.roblox_username.value.strip()
+    col2 = self.roblox_user_id.value.strip()
+    col3 = f'=COUNTIF(INDIRECT("E{next_row}:Z{next_row}"), "<>")'
+    col4 = f'=(INDIRECT(ADDRESS(ROW(), COLUMN() - 1)) / SUM(C4:C20)) * 70'
+
+    row_data = [col1, col2, col3, col4]
+
+    sheet.insert_row(row_data, next_row)
+except Exception as e:
+    await interaction.response.send_message(f"❌ Failed to save verification info: {e}", ephemeral=True)
+    return
 
         bot.verify_submissions[interaction.user.id] = {
             "roblox_username": self.roblox_username.value.strip(),
