@@ -116,8 +116,18 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
 
 @bot.tree.command(name="publish", description="Submit a UGC item for publishing", guild=discord.Object(id=GUILD_ID))
 async def publish(interaction: discord.Interaction):
-    await interaction.response.send_modal(PublishModal())
+    guild = bot.get_guild(GUILD_ID)
+    member = guild.get_member(interaction.user.id)
+    role = discord.utils.get(guild.roles, name=REGISTERED_CREATOR_ROLE_NAME)
 
+    if not role or not member or role not in member.roles:
+        await interaction.response.send_message(
+            "❌ You must be a Registered Creator to submit a UGC item.",
+            ephemeral=True
+        )
+        return
+
+    await interaction.response.send_modal(PublishModal())
 @bot.tree.command(name="verify", description="Verify as a UGC creator to get access", guild=discord.Object(id=GUILD_ID))
 async def verify(interaction: discord.Interaction):
     guild = bot.get_guild(GUILD_ID)
