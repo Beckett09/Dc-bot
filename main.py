@@ -1,17 +1,32 @@
 import os
+import json
 import discord
 from discord.ext import commands
 from discord import app_commands
 from keep_alive import keep_alive
 
+import gspread
+from google.oauth2.service_account import Credentials
+from google.auth.transport.requests import AuthorizedSession
+
 TOKEN = os.getenv("TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID"))
 GUILD_ID = int(os.getenv("GUILD_ID"))
+SHEET_ID = os.getenv("SHEET_ID")  # Google Sheet ID
+GOOGLE_CREDS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")  # The full JSON content as a string
+
+# Load Google credentials from JSON string
+creds_dict = json.loads(GOOGLE_CREDS_JSON)
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+gc = gspread.authorize(creds)
+
+WORKSHEET_NAME = "Sheet1"  # Change if needed
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
-intents.members = True  # Required for role assignment
+intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.publish_submissions = {}
@@ -55,6 +70,24 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
     async def on_submit(self, interaction: discord.Interaction):
         if self.acknowledgment.value.strip().lower() != "i agree":
             await interaction.response.send_message("❌ You must type 'I agree' to confirm the requirements.", ephemeral=True)
+            return
+
+        # Append to Google Sheet
+        try:
+            sheet = gc.open_by_key(SHEET_ID).worksheet(WORKSHEET_NAME)
+            # Find the next available row
+            next_row = len(sheet.get_all_values()) + 1
+            # Prepare data row - update as needed
+            row_data = [
+                str(interaction.user.id),
+                interaction.user.name,
+                self.roblox_username.value.strip(),
+                self.roblox_user_id.value.strip(),
+                self.ugc_example_link.value.strip()
+            ]
+            sheet.insert_row(row_data, next_row)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Failed to save verification info: {e}", ephemeral=True)
             return
 
         bot.verify_submissions[interaction.user.id] = {
