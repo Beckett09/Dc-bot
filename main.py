@@ -84,6 +84,11 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
             row_data = [col1, col2, col3, col4]
 
             sheet.insert_row(row_data, next_row)
+            sheet.update(cell_range, [row_data])
+
+            # Then force refresh of formula cells by rewriting them:
+            sheet.update_acell(f"C{next_row}", col3)
+            sheet.update_acell(f"D{next_row}", col4)
         except Exception as e:
             await interaction.response.send_message(f"❌ Failed to save verification info: {e}", ephemeral=True)
             return
