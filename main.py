@@ -20,6 +20,21 @@ bot.verify_submissions = {}
 
 REGISTERED_CREATOR_ROLE_NAME = "Registered Creator"
 
+class PostModal(discord.ui.Modal, title="Submit Your Info"):
+    title_input = discord.ui.TextInput(label="Title", max_length=100)
+    description_input = discord.ui.TextInput(
+        label="Description",
+        style=discord.TextStyle.paragraph,
+        max_length=1000
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        bot.user_submissions[interaction.user.id] = {
+            "title": self.title_input.value,
+            "description": self.description_input.value
+        }
+        await interaction.response.send_message("✅ Info received! Now reply to this with an image.", ephemeral=True)
+
 class PublishModal(discord.ui.Modal, title="Submit UGC Item"):
     item_name = discord.ui.TextInput(label="Item Name", max_length=100)
     description = discord.ui.TextInput(label="Item Description", style=discord.TextStyle.paragraph, max_length=1000)
@@ -53,7 +68,6 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
             "ugc_example_link": self.ugc_example_link.value.strip(),
         }
 
-        # Attempt to assign Registered Creator role
         guild = bot.get_guild(GUILD_ID)
         member = guild.get_member(interaction.user.id)
         if not member:
@@ -62,9 +76,8 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
 
         role = discord.utils.get(guild.roles, name=REGISTERED_CREATOR_ROLE_NAME)
         if not role:
-            # Create role if it doesn't exist
             role = await guild.create_role(name=REGISTERED_CREATOR_ROLE_NAME)
-        
+
         try:
             await member.add_roles(role, reason="UGC Creator verified")
             await interaction.response.send_message("✅ Verified! You have been given the Registered Creator role.", ephemeral=True)
@@ -77,9 +90,9 @@ async def on_ready():
     try:
         guild = discord.Object(id=GUILD_ID)
         synced = await bot.tree.sync(guild=guild)
-        print(f"Synced {len(synced)} command(s)")
+        print(f"Synced {len(synced)} command(s) for guild {GUILD_ID}")
     except Exception as e:
-        print(e)
+        print(f"Sync error: {e}")
 
 @bot.tree.command(name="post", description="Submit content", guild=discord.Object(id=GUILD_ID))
 async def post(interaction: discord.Interaction):
@@ -93,13 +106,19 @@ async def publish(interaction: discord.Interaction):
 async def verify(interaction: discord.Interaction):
     await interaction.response.send_modal(VerifyModal())
 
+@bot.command()
+@commands.is_owner()
+async def sync(ctx):
+    synced = await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
+    await ctx.send(f"Synced {len(synced)} commands.")
+
 @bot.event
 async def on_message(message):
     await bot.process_commands(message)
     if message.author.bot:
         return
 
-    # Handle simple image submission after /post modal
+    # Handle image submission after /post modal
     if message.author.id in bot.user_submissions:
         data = bot.user_submissions.pop(message.author.id)
 
