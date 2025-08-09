@@ -98,6 +98,9 @@ async def on_ready():
         print(f"Synced {len(synced)} command(s) for guild {GUILD_ID}")
     except Exception as e:
         print(f"Sync error: {e}")
+    print("Commands registered after sync:")
+    for cmd in bot.tree.walk_commands():
+        print(f"- {cmd.name}")
 
 @bot.tree.command(name="post", description="Submit content", guild=discord.Object(id=GUILD_ID))
 async def post(interaction: discord.Interaction):
