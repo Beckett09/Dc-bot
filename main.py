@@ -7,7 +7,6 @@ from keep_alive import keep_alive
 
 import gspread
 from google.oauth2.service_account import Credentials
-from google.auth.transport.requests import AuthorizedSession
 
 TOKEN = os.getenv("TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID"))
@@ -75,14 +74,7 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
         # Append to Google Sheet
         try:
             sheet = gc.open_by_key(SHEET_ID).worksheet(WORKSHEET_NAME)
-            # Find the next available row (1-based)
-            next_row = len(sheet.get_all_values()) + 1
-
-            # Prepare the row data:
-            # Column 1: Roblox Username (string)
-            # Column 2: Roblox User ID (string)
-            # Column 3: formula for COUNTIF(...) referencing current row
-            # Column 4: formula referencing column 3 of current row and range C4:C20
+            next_row = len(sheet.get_all_values()) + 1  # 1-based
 
             col1 = self.roblox_username.value.strip()
             col2 = self.roblox_user_id.value.strip()
@@ -97,8 +89,8 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
             return
 
         bot.verify_submissions[interaction.user.id] = {
-            "roblox_username": self.roblox_username.value.strip(),
-            "roblox_user_id": self.roblox_user_id.value.strip(),
+            "roblox_username": col1,
+            "roblox_user_id": col2,
             "ugc_example_link": self.ugc_example_link.value.strip(),
         }
 
@@ -118,31 +110,21 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
         except Exception as e:
             await interaction.response.send_message(f"❌ Failed to assign role: {e}", ephemeral=True)
 
-@bot.event
-async def on_ready():
-    print(f"Logged in as {bot.user}")
-
-    print("Commands registered before sync:")
-    for cmd in bot.tree.walk_commands():
-        print(f"- {cmd.name}")
-
-    try:
-        guild = discord.Object(id=GUILD_ID)
-        synced = await bot.tree.sync(guild=guild)
-        print(f"Synced {len(synced)} command(s) for guild {GUILD_ID}")
-    except Exception as e:
-        print(f"Sync error: {e}")
-
-    print("Commands registered after sync:")
-    for cmd in bot.tree.walk_commands():
-        print(f"- {cmd.name}")
-
 @bot.tree.command(name="publish", description="Submit a UGC item for publishing", guild=discord.Object(id=GUILD_ID))
 async def publish(interaction: discord.Interaction):
     await interaction.response.send_modal(PublishModal())
 
 @bot.tree.command(name="verify", description="Verify as a UGC creator to get access", guild=discord.Object(id=GUILD_ID))
 async def verify(interaction: discord.Interaction):
+    guild = bot.get_guild(GUILD_ID)
+    member = guild.get_member(interaction.user.id)
+    role = discord.utils.get(guild.roles, name=REGISTERED_CREATOR_ROLE_NAME)
+
+    # Check if user already has the role
+    if role and member and role in member.roles:
+        await interaction.response.send_message("✅ You are already verified and have the Registered Creator role.", ephemeral=True)
+        return
+
     await interaction.response.send_modal(VerifyModal())
 
 @bot.command()
@@ -150,6 +132,22 @@ async def verify(interaction: discord.Interaction):
 async def sync(ctx):
     synced = await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
     await ctx.send(f"Synced {len(synced)} commands.")
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}")
+    print("Commands registered before sync:")
+    for cmd in bot.tree.walk_commands():
+        print(f"- {cmd.name}")
+    try:
+        guild = discord.Object(id=GUILD_ID)
+        synced = await bot.tree.sync(guild=guild)
+        print(f"Synced {len(synced)} command(s) for guild {GUILD_ID}")
+    except Exception as e:
+        print(f"Sync error: {e}")
+    print("Commands registered after sync:")
+    for cmd in bot.tree.walk_commands():
+        print(f"- {cmd.name}")
 
 keep_alive()
 bot.run(TOKEN)
