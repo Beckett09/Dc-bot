@@ -14,26 +14,10 @@ intents.guilds = True
 intents.members = True  # Required for role assignment
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-bot.user_submissions = {}
 bot.publish_submissions = {}
 bot.verify_submissions = {}
 
 REGISTERED_CREATOR_ROLE_NAME = "Registered Creator"
-
-class PostModal(discord.ui.Modal, title="Submit Your Info"):
-    title_input = discord.ui.TextInput(label="Title", max_length=100)
-    description_input = discord.ui.TextInput(
-        label="Description",
-        style=discord.TextStyle.paragraph,
-        max_length=1000
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        bot.user_submissions[interaction.user.id] = {
-            "title": self.title_input.value,
-            "description": self.description_input.value
-        }
-        await interaction.response.send_message("✅ Info received! Now reply to this with an image.", ephemeral=True)
 
 class PublishModal(discord.ui.Modal, title="Submit UGC Item"):
     item_name = discord.ui.TextInput(label="Item Name", max_length=100)
@@ -48,7 +32,19 @@ class PublishModal(discord.ui.Modal, title="Submit UGC Item"):
             "fbx_url": self.fbx_url.value,
             "texture_url": self.texture_url.value,
         }
-        await interaction.response.send_message("✅ Your UGC item submission has been received and will be reviewed.", ephemeral=True)
+        # Send submission info to owner
+        owner = await bot.fetch_user(OWNER_ID)
+        embed = discord.Embed(
+            title=f"New UGC Item Submission: {self.item_name.value}",
+            description=f"{self.description.value}",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="FBX URL", value=self.fbx_url.value, inline=False)
+        embed.add_field(name="Texture URL", value=self.texture_url.value, inline=False)
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+        await owner.send(embed=embed)
+
+        await interaction.response.send_message("✅ Your UGC item submission has been received and sent for review.", ephemeral=True)
 
 class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
     roblox_username = discord.ui.TextInput(label="Roblox Username", max_length=100)
@@ -57,7 +53,6 @@ class VerifyModal(discord.ui.Modal, title="UGC Creator Verification"):
     acknowledgment = discord.ui.TextInput(label="Type 'I agree' to confirm you understand the requirements", max_length=10)
 
     async def on_submit(self, interaction: discord.Interaction):
-        # Validate acknowledgment
         if self.acknowledgment.value.strip().lower() != "i agree":
             await interaction.response.send_message("❌ You must type 'I agree' to confirm the requirements.", ephemeral=True)
             return
@@ -98,13 +93,10 @@ async def on_ready():
         print(f"Synced {len(synced)} command(s) for guild {GUILD_ID}")
     except Exception as e:
         print(f"Sync error: {e}")
+
     print("Commands registered after sync:")
     for cmd in bot.tree.walk_commands():
         print(f"- {cmd.name}")
-
-@bot.tree.command(name="post", description="Submit content", guild=discord.Object(id=GUILD_ID))
-async def post(interaction: discord.Interaction):
-    await interaction.response.send_modal(PostModal())
 
 @bot.tree.command(name="publish", description="Submit a UGC item for publishing", guild=discord.Object(id=GUILD_ID))
 async def publish(interaction: discord.Interaction):
@@ -119,33 +111,6 @@ async def verify(interaction: discord.Interaction):
 async def sync(ctx):
     synced = await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
     await ctx.send(f"Synced {len(synced)} commands.")
-
-@bot.event
-async def on_message(message):
-    await bot.process_commands(message)
-    if message.author.bot:
-        return
-
-    # Handle image submission after /post modal
-    if message.author.id in bot.user_submissions:
-        data = bot.user_submissions.pop(message.author.id)
-
-        image_url = None
-        if message.attachments:
-            image_url = message.attachments[0].url
-
-        user = await bot.fetch_user(OWNER_ID)
-
-        embed = discord.Embed(
-            title=data["title"],
-            description=data["description"],
-            color=discord.Color.teal()
-        )
-        if image_url:
-            embed.set_image(url=image_url)
-
-        await user.send(f"New submission from {message.author.mention}:", embed=embed)
-        await message.reply("✅ Sent to the owner!")
 
 keep_alive()
 bot.run(TOKEN)
